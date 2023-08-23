@@ -1,0 +1,167 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+     ViewData["Title"] = "Message List Page";
+}
+
+<div id="app">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>留言板</h1>
+        <div style="display: flex; align-items: center;">
+            <a href="/Message/AddMessage">
+                <button type="button">新增留言</button>
+            </a>
+        </div>
+    </div>
+    <table style="width: 100%;">
+        <thead>
+        <tr>
+            <th style="width: 10%;">留言數</th> 
+            <th style="width: 50%;">標題</th>
+            <th style="width: 15%;">作者</th>
+            <th style="width: 20%;">發表時間</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+            <tr v-for="(message, index) in messages" :key="index">
+                <td>{{ message.replys.length }}</td>
+                <td><a :href="'/Message/Detail/'+message.id">{{ message.title }}</a></td>
+                <td>{{ message.userName }}</td>
+                <td>{{ message.date }}</td>
+                <td :name="message.userName">
+                    <button class="d-none" v-on:click="DeleteMessage(message.id)">X</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <div style="text-align: center;">
+        <ul class="pagination">
+            <li >
+                <button type="button" v-on:click="GetNextPage(pageNumber-1)">＜</button>
+            </li>
+            <li v-for="page in pageCount" :key="page">
+                <button type="button" v-on:click="GetMessageList(page)">{{ page }}</button>
+            </li>
+            <li>
+                <button type="button" v-on:click="GetNextPage(pageNumber+1)">＞</button>
+            </li>
+        </ul>
+    </div>
+</div>
+<script>
+    const app = Vue.createApp({
+        el: "#app",
+        data() {
+            return {
+                messages: [],
+                pageCount:"",
+                pageNumber:1,
+            }
+        },
+        created() {
+            this.GetMessageList();
+            this.GetMessagePageCount();
+       
+        },
+        mounted() {
+            this.GetUserPerssion();
+        },
+        methods:{
+            GetMessageList(id) {
+                const self = this;
+                if (id !== self.pageNumber) {
+                    $.ajax({
+                        url: "/Message/GetMessageList/" + id,
+                        type: "Get",
+                        contentType: "application/json",
+                        success: function (data) {
+                            self.messages = data;
+                            $("td button").addClass("d-none")
+                            self.GetUserPerssion();
+                            if (id) {
+                                self.pageNumber = id;
+                            }
+                        },
+                        error: function (error) {
+                            console.error("Error:", error);
+                        }
+                    });
+                }
+                
+            },
+            GetUserPerssion() {
+                $.ajax({
+                    url: "/Message/GetUserPerssion",
+                    type: "Get",
+                    contentType: "application/json",
+                    success: function (data) {
+                        if (data == "all") {
+                            $("td").find("button").removeClass("d-none");
+                        } else {
+                            $("[name='" + data + "'").find("button").removeClass("d-none");
+                        }
+                       
+                    },
+                    error: function (error) {
+                        console.error("Error:", error);
+                    }
+                });
+            },
+            DeleteMessage(id) {
+                const self = this;
+                $.ajax({
+                    url: "/Message/DeleteMessage/"+id,
+                    type: "POST",
+                    contentType: "application/json",
+                    success: function (data) {
+                        self.GetMessageList(self.pageNumber);
+                    },
+                    error: function (error) {
+                        console.error("Error:", error);
+                    }
+                });                
+            }, 
+            GetMessagePageCount() {
+                const self = this;
+                    $.ajax({
+                    url: "/Message/GetMessagePageCount",
+                    type: "GET",
+                    contentType: "application/json",
+                    success: function (data) {
+                        self.pageCount = data;
+                    },
+                    error: function (error) {
+                        console.error("Error:", error);
+                    }
+                });
+            },
+            GetNextPage(id) {
+                if (id <= this.pageCount && id > 0) {
+                    this.GetMessageList(id);
+                }
+            },
+
+        },
+    });
+    app.mount("#app");
+</script>
+<style>
+    .pagination {
+        display: inline-block;
+        padding: 0;
+        margin: 0;
+    }
+
+    .pagination li {
+            display: inline;
+    }
+
+    .pagination li a {
+                color: black;
+                float: left;
+                padding: 8px 16px;
+                text-decoration: none;
+            }
+</style>

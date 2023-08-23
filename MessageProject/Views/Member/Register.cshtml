@@ -1,0 +1,105 @@
+﻿
+
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+     ViewData["Title"] = "Register  Page";
+}
+<div id="app">
+    <h1>Register</h1>
+    <form action="/Member/GetRegisterAccount" method="post" onsubmit="return CheckForm()">
+        <label for="username">請輸入帳號名稱:</label>
+        <input type="text" v-model="userName" id="username" name="username" v-on:change="CheckAccount()" required><br><br>
+        <p v-if="accountRepeat"> 帳號名稱重複 </p>
+        <label for="password">請輸入帳號密碼:</label>
+        <input type="password" id="password" name="password" v-model="passwordValue" v-on:change="CheckPasswordMatch()" required><br><br>
+
+        <label for="checkPassword">請重複輸入密碼:</label>
+        <input type="password" id="checkpassword" v-model="checkPasswordValue" v-on:change="CheckPasswordMatch()" required><br><br>
+
+        <p v-if="passwordMatch"> 密碼不一致 </p>
+        
+        <button type="submit" id="registerButton">Register</button>
+    </form>
+</div>
+<script>
+   const app = Vue.createApp({
+        el: "#app",
+        data() {
+               return {
+                   userName: "",
+                   passwordValue: "",
+                   checkPasswordValue:"",
+                   passwordMatch:false,
+                   accountRepeat:false
+               }               
+        },
+        computed: {
+            isPasswordValid() {
+                // 驗證密碼長度和包含大小寫英文字母
+                const minLength = 6;
+                const hasLowerCase = /[a-z]/.test(this.passwordValue);
+                const hasUpperCase = /[A-Z]/.test(this.passwordValue);
+                return this.passwordValue.length >= minLength && hasLowerCase && hasUpperCase;
+            },
+            CheckForm() {
+                let tipString = "";
+                if (!this.isPasswordValid) {
+                        tipString+="密碼長度至少六位，並包含大小寫英文。\n";
+                }
+                if (this.passwordMatch) {
+                    tipString += "請確認兩次密碼是否都正確輸入。\n";
+                }
+                if (tipString.length > 0) {
+                    alert(tipString);
+                    return false;
+                } else {
+                    return true;
+                }       
+            }
+        },
+         methods: {
+            CheckPasswordMatch() {
+                this.passwordMatch = this.passwordValue != this.checkPasswordValue;                    
+            },
+            PostAccount(){
+                const username = $("#username").val();
+                const password = $("#pwd").val();
+
+                $.ajax({
+                    url: "/Member/GetRegisterAccount",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({ 
+                        username: username ,
+                        password: password
+                    }),
+                    success: function (data) {
+                        console.log(data);
+                    },
+                    error: function (error) {
+                        console.error("Error:", error);
+                    }
+                });
+            },
+            CheckAccount() {
+                const userName = this.userName;
+                const self = this;
+                $.ajax({
+                    url: "/Member/CheckUserExists/" + userName,
+                    type: "POST",
+                    contentType: "application/json",
+                    success: function (data) {
+                        self.accountRepeat = data;
+                    },
+                    error: function (error) {
+                        console.error("Error:", error);
+                    }
+                });
+            }
+
+        }
+    });
+    app.mount("#app");
+</script>

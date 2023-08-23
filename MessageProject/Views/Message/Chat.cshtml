@@ -1,0 +1,113 @@
+﻿
+
+
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+
+<h1>聊天室</h1>
+<div id="app">
+
+        <div class="col-8">
+            <div class="mb-3 fixed-bottom form-row">
+                <div class="col-sm-1"></div>
+                <label for="sendToID" class="form-label" style="margin-right: 10px;">指定 ID</label>
+                <div class="col-sm-1" style="margin-right: 10px;">
+                    <input v-model="sendToID" type="text" class="form-control"  placeholder="All" id="sendToID">
+                </div>
+                <label for="message" class="form-label" style=" margin-right: 10px; ">發送訊息</label>
+                <div class="col-sm-7" style="margin-right: 10px;">
+                    <input v-model="message" type="text" style="margin-right: 10px;" v-on:keyup.enter="SendMessage()" class="form-control" id="message">
+                </div>
+                <button type="button" class="btn btn-primary " v-on:click="SendMessage()">傳送訊息</button>
+            </div>
+            
+        </div>
+
+    <div class="row">
+        <div id="chatContent" class="col-8" style=" overflow-y: auto;max-height: 360px;">
+            <div class="col-12">
+                <h3>聊天內容</h3>
+                <ul class="list-group">
+                    <li v-for="msg in content" :key="msg" class="list-group-item">{{ msg }}</li>
+                </ul>
+            </div>
+        </div>
+        <div  class="col-4" style="overflow-y: auto;max-height: 360px;">
+            <h3>聊天室成員</h3>
+            <ul class="list-group">
+                <li v-for="id in IDList" :key="id" class="list-group-item">{{ id }}</li>
+            </ul>
+        </div>
+    </div>
+</div>
+<script>
+    const app = Vue.createApp({
+        el: "#app",
+        data() {
+            return {
+                connection: null,
+                selfID: "",
+                message: "",
+                sendToID: "",
+                IDList: [],
+                content:[]
+            };
+        },
+        methods: {
+            StartConnection() {
+                this.connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+
+                this.connection.start().then(() => {
+                    console.log("Hub 連線完成");
+                }).catch((err) => {
+                    alert('連線錯誤: ' + err.toString());
+                });
+
+                this.connection.on("UpdList", (jsonList) => {
+                    this.IDList = JSON.parse(jsonList);
+                });
+
+                this.connection.on("UpdSelfID", (id) => {
+                    this.selfID = id;
+                });
+
+                this.connection.on("UpdContent", (msg) => {
+                    this.content.push(msg);
+                });
+            },
+            SendMessage() {
+                this.connection.invoke("SendMessage", this.selfID, this.message, this.sendToID).then(() => {
+                    $("#message").val("");
+                    var chatContent = $("#chatContent");
+                    $("#chatContent").scrollTop(chatContent[0].scrollHeight);
+                })
+                .catch((err) => {
+                        alert('傳送錯誤: ' + err.toString());
+                });
+              
+            }
+        },
+        mounted() {
+            this.StartConnection();
+        }
+    });
+    app.mount("#app");
+</script>
+<style>
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .list-group-item {
+        word-wrap: break-word; 
+        white-space: normal; 
+    }
+
+ 
+
+</style>

@@ -1,0 +1,169 @@
+﻿@model MessageProject.Models.Message
+
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+     ViewData["Title"] = "Message  Page";
+}
+<div id="app">
+
+    <div style="text-align: center;" >
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="margin: 0 auto; width: 70%; display: flex;">
+                <h3>@ViewBag.Message.Title</h3>
+                @if (User.Identity.Name == ViewBag.Message.UserName||User.IsInRole("Admin"))
+                {
+                    <div style="margin-left: auto;">
+                        <button id="messageEdit" type="button" v-on:click="MessageEdit()">編輯</button>
+                        <button id="messageSubmit" type="button" v-on:click="MessageSubmit(@ViewBag.Message.Id)" class="d-none">完成</button>
+                    </div>
+                }                
+            </div>
+        </div>
+        <div>
+            <textarea id="messageTextarea" style="height: 150px;width: 70%;" readonly>@ViewBag.Message.Content</textarea>
+        </div>
+    </div>
+
+    @foreach (var reply in ViewBag.Message.Replys)
+    {
+        <div id="reply_@reply.Id" style="margin-top:10px">
+            <div style="margin:0px auto;width: 70%; display: flex">
+                <div style="vertical-align: top;width: 18%">@reply.UserName</div>
+                <textarea id="textarea_@reply.Id" style="height: auto;width: 72%" readonly>@reply.ReplyContent</textarea>
+                <div name="replyButton_@reply.UserName" class="d-none" style="width: 10%">
+                    <button id="replyEdit_@reply.Id" name="@reply.UserName" v-on:click="EditContent(@reply.Id)">編輯</button>
+                    <button id="replySubmit_@reply.Id" name="@reply.UserName" v-on:click="EditSubmit(@reply.Id)" class="d-none">完成</button>
+                    <button  name="@reply.UserName" v-on:click="DeleteReply(@reply.Id)">刪除</button>
+                </div>
+            </div>
+        </div>
+    }
+    <hr >  
+    <div class="reply" style="text-align: center;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="margin:0px auto;width: 70%; display: flex">
+                <textarea id="replyTextarea" style="height: auto;width: 100%" placeholder="回覆内容"></textarea>
+                <button v-on:click="PostReply()">回覆</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const app = Vue.createApp({
+        el: "#app",
+        data() {
+            return {
+
+            }
+        },
+        created() {
+            this.GetUserPerssion();
+        },
+        methods: {
+            PostReply() {
+                var id=@Html.Raw(Json.Serialize(ViewBag.Message.Id));
+                const content = $("#replyTextarea").val();
+                $.ajax({
+                    url: "/Message/CreateReplyMessage",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        "MessageId": id,
+                        "ReplyContent": content,
+                    }),
+                    success: function (data) {
+                        window.location.reload();
+                    },
+                    error: function (error) {
+                        console.error("Error:", error);
+                    }
+                });
+            },
+            EditContent(id) {
+                $("#textarea_" + id).prop("readonly", false);
+                $("#replyEdit_" + id).addClass("d-none");
+                $("#replySubmit_" + id).removeClass("d-none");
+            },
+            EditSubmit(id) {
+                $("#textarea_" + id).prop("readonly", true);
+                $("#replyEdit_" + id).removeClass("d-none");
+                $("#replySubmit_" + id).addClass("d-none");
+                const content = $("#textarea_" + id).val();
+                $.ajax({
+                    url: "/Message/UpdateReply",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        "Id": id,
+                        "ReplyContent": content,
+                    }),
+                    success: function (data) {
+                        console.log(data);
+                    },
+                    error: function (error) {
+                        console.error("Error:", error);
+                    }
+                });
+            },
+            DeleteReply(id) {
+                $.ajax({
+                    url: "/Message/DeleteReply/"+id,
+                    type: "POST",
+                    contentType: "application/json",
+                    success: function (data) {
+                        $("#reply_" + id).remove();
+                    },
+                    error: function (error) {
+                        console.error("Error:", error);
+                    }
+                });
+            },
+            GetUserPerssion() {
+                $.ajax({
+                    url: "/Message/GetUserPerssion",
+                    type: "Get",
+                    contentType: "application/json",
+                    success: function (data) {
+                        if (data == "all") {
+                            $("[name^='replyButton_']").removeClass("d-none");
+                        } else {
+                            $("[name='replyButton_" + data + "']").removeClass("d-none");
+                        }                        
+                    },
+                    error: function (error) {
+                        console.error("Error:", error);
+                    }
+                });
+            },
+            MessageEdit() {
+                $("#messageTextarea").prop("readonly", false);
+                $("#messageSubmit").removeClass("d-none");
+                $("#messageEdit").addClass("d-none");
+            },
+            MessageSubmit(id) {                
+                const content = $("#messageTextarea").val();
+                $.ajax({
+                    url: "/Message/UpdateMessage",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        "Id": id,
+                        "Content": content,
+                    }),
+                    success: function (data) {
+                        $("#messageTextarea").prop("readonly",true);
+                        $("#messageSubmit").addClass("d-none");
+                        $("#messageEdit").removeClass("d-none");
+                    },
+                    error: function (error) {
+                        console.error("Error:", error);
+                    }
+                });
+            },
+        },
+    });
+    app.mount("#app");
+</script>
+
