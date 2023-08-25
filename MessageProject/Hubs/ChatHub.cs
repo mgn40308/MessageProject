@@ -8,7 +8,7 @@ namespace MessageProject.Hubs
     public class ChatHub:Hub
     {
         // 用戶連線 ID 列表
-        public static Dictionary<string, string> userConnectionMap = new Dictionary<string, string>();
+        public static Dictionary<string, string> UserConnectionMap = new Dictionary<string, string>();
         // 用戶連線 UserName 列表
         public static List<string> ConnUserNameList = new List<string>();
 
@@ -22,7 +22,7 @@ namespace MessageProject.Hubs
 
             if (ConnUserNameList.Where(p => p == Context.User.Identity.Name).FirstOrDefault() == null)
             {
-                userConnectionMap[Context.User.Identity.Name] = Context.ConnectionId;
+                UserConnectionMap[Context.User.Identity.Name] = Context.ConnectionId;
                 ConnUserNameList.Add(Context.User.Identity.Name);
             }
             // 更新連線 ID 列表
@@ -78,7 +78,7 @@ namespace MessageProject.Hubs
             }
             else
             {
-                if (userConnectionMap.TryGetValue(sendToID, out string receiverConnectionId))
+                if (UserConnectionMap.TryGetValue(sendToID, out string receiverConnectionId))
                 {
                     // 发送消息给接收人
                     await Clients.Client(receiverConnectionId).SendAsync("UpdContent",$"{selfID} 私訊向你說:{message}");

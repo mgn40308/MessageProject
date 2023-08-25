@@ -59,7 +59,7 @@ namespace MessageProject.Controllers
             return View();
         }
         /// <summary>
-        /// 
+        /// 註冊帳號
         /// </summary>
         /// <param name="form">前端form表單傳回應有 </param>
         /// username 使用者帳號
@@ -93,7 +93,7 @@ namespace MessageProject.Controllers
                         {
                             ModelState.AddModelError(string.Empty, error.Description);
                         }
-                        // 返回帶有錯誤訊息的視圖
+                        
                         return View();
                     }
                 }               
@@ -122,7 +122,6 @@ namespace MessageProject.Controllers
                 {
                     return RedirectToAction("List", "Message");
                 }
-                // 登入失敗處理
                 ModelState.AddModelError(string.Empty, "登入失敗");
             }
             return RedirectToAction("Login", "Member");
@@ -209,29 +208,27 @@ namespace MessageProject.Controllers
         public async Task<IActionResult> AddUserToAdminRole(IFormCollection form)
         {
             string userName = form["username"];
-            // 查找用户
             var user = await _userManager.FindByNameAsync(userName);
 
             if (user != null)
             {
-                // 查找管理员角色
+                // 查找管理員角色
                 var adminRoleExists = await _roleManager.RoleExistsAsync("Admin");
                 if (!adminRoleExists)
                 {
-                    // 如果管理员角色不存在，可以创建它
                     await _roleManager.CreateAsync(new IdentityRole("Admin"));
                 }
 
-                // 将用户添加到管理员角色
+                // 將使用者加到管理員
                 await _userManager.AddToRoleAsync(user, "Admin");
 
-                // 在此添加其他逻辑，例如返回一个成功的视图
                 return View("Success");
             }
 
-            // 用户不存在的情况
             return View("Error");
         }
+
+
 
     }
 }

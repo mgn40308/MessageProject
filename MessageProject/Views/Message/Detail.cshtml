@@ -6,40 +6,37 @@
 @{
      ViewData["Title"] = "Message  Page";
 }
-<div id="app">
+<div id="app" data-identity-name="@User.Identity.Name">
+    
 
     <div style="text-align: center;" >
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div style="margin: 0 auto; width: 70%; display: flex;">
-                <h3>@ViewBag.Message.Title</h3>
-                @if (User.Identity.Name == ViewBag.Message.UserName||User.IsInRole("Admin"))
-                {
+                <h3>{{messages.title}}</h3>
+                <div v-if="IsAdmin">
                     <div style="margin-left: auto;">
                         <button id="messageEdit" type="button" v-on:click="MessageEdit()">編輯</button>
-                        <button id="messageSubmit" type="button" v-on:click="MessageSubmit(@ViewBag.Message.Id)" class="d-none">完成</button>
-                    </div>
-                }                
-            </div>
-        </div>
-        <div>
-            <textarea id="messageTextarea" style="height: 150px;width: 70%;" readonly>@ViewBag.Message.Content</textarea>
-        </div>
-    </div>
-
-    @foreach (var reply in ViewBag.Message.Replys)
-    {
-        <div id="reply_@reply.Id" style="margin-top:10px">
-            <div style="margin:0px auto;width: 70%; display: flex">
-                <div style="vertical-align: top;width: 18%">@reply.UserName</div>
-                <textarea id="textarea_@reply.Id" style="height: auto;width: 72%" readonly>@reply.ReplyContent</textarea>
-                <div name="replyButton_@reply.UserName" class="d-none" style="width: 10%">
-                    <button id="replyEdit_@reply.Id" name="@reply.UserName" v-on:click="EditContent(@reply.Id)">編輯</button>
-                    <button id="replySubmit_@reply.Id" name="@reply.UserName" v-on:click="EditSubmit(@reply.Id)" class="d-none">完成</button>
-                    <button  name="@reply.UserName" v-on:click="DeleteReply(@reply.Id)">刪除</button>
+                        <button id="messageSubmit" type="button" v-on:click="MessageSubmit(messages.id)" class="d-none">完成</button>
+                    </div>                    
                 </div>
             </div>
         </div>
-    }
+        <div>
+            <textarea id="messageTextarea" style="height: 150px;width: 70%;" readonly>{{messages.content}}</textarea>
+        </div>
+    </div>
+
+    <div v-for="reply in messages.replys" :key="reply.id" :id="'reply_' + reply.id" style="margin-top:10px">
+        <div style="margin:0px auto;width: 70%; display: flex">
+            <div style="vertical-align: top;width: 18%">{{ reply.userName }}</div>
+            <textarea :id="'textarea_' + reply.id" style="height: auto;width: 72%" readonly>{{ reply.replyContent }}</textarea>
+            <div :name="'replyButton_' + reply.userName" class="d-none" style="width: 10%">
+                <button :id="'replyEdit_' + reply.id" :name="reply.userName" v-on:click="EditContent(reply.id)">編輯</button>
+                <button :id="'replySubmit_' + reply.id" :name="reply.userName" v-on:click="EditSubmit(reply.id)" class="d-none">完成</button>
+                <button :name="reply.userName" v-on:click="DeleteReply(reply.id)">刪除</button>
+            </div>
+        </div>
+    </div>
     <hr >  
     <div class="reply" style="text-align: center;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -51,19 +48,24 @@
     </div>
 </div>
 <script>
+    var identityName = @Json.Serialize(User.Identity.Name);
     const app = Vue.createApp({
         el: "#app",
         data() {
             return {
-
+                messages: [],
+                IsAdmin: false,
+                Id: @ViewBag.Id,
+                identityName:"",
             }
         },
         created() {
-            this.GetUserPerssion();
+            this.GetDetailContent()
+            this.identityName = document.getElementById('app').getAttribute('data-identity-name');
         },
         methods: {
             PostReply() {
-                var id=@Html.Raw(Json.Serialize(ViewBag.Message.Id));
+                var id=this.messages.id;
                 const content = $("#replyTextarea").val();
                 $.ajax({
                     url: "/Message/CreateReplyMessage",
@@ -121,6 +123,7 @@
                 });
             },
             GetUserPerssion() {
+                const self = this;
                 $.ajax({
                     url: "/Message/GetUserPerssion",
                     type: "Get",
@@ -128,7 +131,10 @@
                     success: function (data) {
                         if (data == "all") {
                             $("[name^='replyButton_']").removeClass("d-none");
+                            self.IsAdmin = true
                         } else {
+                            const userName = self.messages.userName;
+                            self.IsAdmin = (self.identityName === userName);
                             $("[name='replyButton_" + data + "']").removeClass("d-none");
                         }                        
                     },
@@ -162,8 +168,24 @@
                     }
                 });
             },
+            GetDetailContent() {
+                const self = this;
+                $.ajax({
+                    url: "/Message/GetDetail/" + this.Id,
+                    type: "POST",
+                    contentType: "application/json",
+                    success: function (data) {
+                        self.messages = data;
+                        self.GetUserPerssion();
+                    },
+                    error: function (error) {
+                        console.error("Error:", error);
+                    }
+                });
+            },
         },
     });
     app.mount("#app");
 </script>
 
+       

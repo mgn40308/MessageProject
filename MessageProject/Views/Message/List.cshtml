@@ -26,12 +26,12 @@
         </thead>
         <tbody>
             <tr v-for="(message, index) in messages" :key="index">
-                <td>{{ message.replys.length }}</td>
-                <td><a :href="'/Message/Detail/'+message.id">{{ message.title }}</a></td>
-                <td>{{ message.userName }}</td>
-                <td>{{ message.date }}</td>
-                <td :name="message.userName">
-                    <button class="d-none" v-on:click="DeleteMessage(message.id)">X</button>
+                <td>{{ message.ReplyCount }}</td>
+                <td><a :href="'/Message/Detail/'+message.Id">{{ message.Title }}</a></td>
+                <td>{{ message.UserName }}</td>
+                <td>{{ message.Date }}</td>
+                <td :name="message.UserName">
+                    <button class="d-none" v-on:click="DeleteMessage(message.Id)">X</button>
                 </td>
             </tr>
         </tbody>
@@ -72,24 +72,28 @@
             GetMessageList(id) {
                 const self = this;
                 if (id !== self.pageNumber) {
-                    $.ajax({
-                        url: "/Message/GetMessageList/" + id,
-                        type: "Get",
-                        contentType: "application/json",
-                        success: function (data) {
-                            self.messages = data;
-                            $("td button").addClass("d-none")
-                            self.GetUserPerssion();
-                            if (id) {
-                                self.pageNumber = id;
-                            }
-                        },
-                        error: function (error) {
-                            console.error("Error:", error);
-                        }
-                    });
+                    this.LoadPage(id);
                 }
                 
+            },
+            LoadPage(id){
+                const self = this;
+                $.ajax({
+                    url: "/Message/GetMessageList/" + id,
+                    type: "Get",
+                    contentType: "application/json",
+                    success: function (data) {
+                        self.messages = data;
+                        $("td button").addClass("d-none")
+                        self.GetUserPerssion();
+                        if (id) {
+                            self.pageNumber = id;
+                        }
+                    },
+                    error: function (error) {
+                        console.error("Error:", error);
+                    }
+                });
             },
             GetUserPerssion() {
                 $.ajax({
@@ -116,7 +120,7 @@
                     type: "POST",
                     contentType: "application/json",
                     success: function (data) {
-                        self.GetMessageList(self.pageNumber);
+                        self.LoadPage(self.pageNumber);
                     },
                     error: function (error) {
                         console.error("Error:", error);

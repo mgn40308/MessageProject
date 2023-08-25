@@ -1,6 +1,9 @@
 ﻿using MySql.Data.MySqlClient;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using System.Text;
+using Microsoft.AspNetCore.Mvc;
 
 namespace MessageProject.Models
 {
@@ -17,6 +20,8 @@ namespace MessageProject.Models
             }
             return sb.ToString();
         }
+
+
 
         //public static bool CreateAccount(string username, string password)
         //{

@@ -2,9 +2,12 @@
 using MessageProject.Hubs;
 using MessageProject.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Pomelo.EntityFrameworkCore.MySql;
+using MySql.Data.MySqlClient;
 using System.Configuration;
+using System.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,9 +17,12 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
         options.UseMySql(builder.Configuration.GetConnectionString("MySQL"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySQL"))));
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseMySql(builder.Configuration.GetConnectionString("MySQL"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySQL"))));
 
+builder.Services.AddScoped<IDbConnection>(provider =>
+{
+    string connectionString = builder.Configuration.GetConnectionString("MySQL");
+    return new MySqlConnection(connectionString);
+});
 
 builder.Services.AddIdentity<User, IdentityRole>(options =>
 {
@@ -51,6 +57,7 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
 
 
 app.UseHttpsRedirection();
