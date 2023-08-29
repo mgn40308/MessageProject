@@ -8,9 +8,9 @@
 }
 <div id="app">
     <h1>Register</h1>
-    <form action="/Member/GetRegisterAccount" method="post" onsubmit="return CheckForm()">
-        <label for="username">請輸入帳號名稱:</label>
-        <input type="text" v-model="userName" id="username" name="username" v-on:change="CheckAccount()" required><br><br>
+    <form>
+        <label for="userName">請輸入帳號名稱:</label>
+        <input type="text" v-model="userName" id="userName" name="userName" v-on:change="CheckAccount()" required><br><br>
         <p v-if="accountRepeat"> 帳號名稱重複 </p>
         <label for="password">請輸入帳號密碼:</label>
         <input type="password" id="password" name="password" v-model="passwordValue" v-on:change="CheckPasswordMatch()" required><br><br>
@@ -20,7 +20,7 @@
 
         <p v-if="passwordMatch"> 密碼不一致 </p>
         
-        <button type="submit" id="registerButton">Register</button>
+        <button type="button" id="registerButton" v-on:click="CheckForm()">Register</button>
     </form>
 </div>
 <script>
@@ -44,6 +44,7 @@
                 return this.passwordValue.length >= minLength && hasLowerCase && hasUpperCase;
             },
             CheckForm() {
+                const self = this;
                 let tipString = "";
                 if (!this.isPasswordValid) {
                         tipString+="密碼長度至少六位，並包含大小寫英文。\n";
@@ -53,8 +54,9 @@
                 }
                 if (tipString.length > 0) {
                     alert(tipString);
-                    return false;
+
                 } else {
+                    self.PostAccount();
                     return true;
                 }       
             }
@@ -64,19 +66,20 @@
                 this.passwordMatch = this.passwordValue != this.checkPasswordValue;                    
             },
             PostAccount(){
-                const username = $("#username").val();
-                const password = $("#pwd").val();
+                const userName = $("#userName").val();
+                const password = $("#password").val();
 
                 $.ajax({
                     url: "/Member/GetRegisterAccount",
                     type: "POST",
                     contentType: "application/json",
+                    async:false,
                     data: JSON.stringify({ 
-                        username: username ,
-                        password: password
+                        UserName: userName,
+                        Password: password
                     }),
                     success: function (data) {
-                        console.log(data);
+                        location.href = "/Member/Login"
                     },
                     error: function (error) {
                         console.error("Error:", error);

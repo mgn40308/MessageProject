@@ -21,29 +21,6 @@ namespace MessageProject.Models
             return sb.ToString();
         }
 
-
-
-        //public static bool CreateAccount(string username, string password)
-        //{
-        //    string connString = SQLHelper.MySqlConnectString;
-        //    string encrypPassword = EncryptionPassword(password);
-        //    using MySqlConnection connection = new(connString);
-        //    connection.Open();
-
-        //    // 建立插入 SQL 語句
-        //    string insertQuery = "INSERT INTO UserAccounts (Username, Password ,Permission) VALUES (@Username, @Password,@Permission)";
-
-        //    // 建立 MySqlCommand 對象
-        //    using MySqlCommand cmd = new(insertQuery, connection);
-        //    // 添加參數
-        //    cmd.Parameters.AddWithValue("@Username", username);
-        //    cmd.Parameters.AddWithValue("@Password", encrypPassword);
-        //    cmd.Parameters.AddWithValue("@Permission", 1);
-        //    // 執行插入操作
-        //    int rowsAffected = cmd.ExecuteNonQuery();
-        //    return rowsAffected > 0;
-        //}
-
     }
 
     

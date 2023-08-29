@@ -17,12 +17,16 @@
 
   <ItemGroup>
     <Compile Remove="Controllers\NewFolder\**" />
+    <Compile Remove="Migrations\**" />
     <Compile Remove="wwwroot\vue\**" />
     <Content Remove="Controllers\NewFolder\**" />
+    <Content Remove="Migrations\**" />
     <Content Remove="wwwroot\vue\**" />
     <EmbeddedResource Remove="Controllers\NewFolder\**" />
+    <EmbeddedResource Remove="Migrations\**" />
     <EmbeddedResource Remove="wwwroot\vue\**" />
     <None Remove="Controllers\NewFolder\**" />
+    <None Remove="Migrations\**" />
     <None Remove="wwwroot\vue\**" />
   </ItemGroup>
 

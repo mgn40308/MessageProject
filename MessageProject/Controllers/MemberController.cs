@@ -10,14 +10,14 @@ namespace MessageProject.Controllers
    
     public class MemberController : Controller
     {
-        private readonly UserManager<User> _userManager;
-        private readonly SignInManager<User> _signInManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
-        public MemberController(UserManager<User> userManager, SignInManager<User> signInManager,RoleManager<IdentityRole> roleManager)
+        private readonly CustomUserManager _customUserManager;
+        private readonly CustomSignInManager _customSignInManager;
+        private readonly CustomRoleManager _customRoleManager;
+        public MemberController(CustomUserManager customUserManager, CustomSignInManager customSignInManager, CustomRoleManager customRoleManager)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _roleManager = roleManager;
+            _customUserManager = customUserManager;
+            _customSignInManager = customSignInManager;
+            _customRoleManager = customRoleManager;
         }
 
         public IActionResult Index()
@@ -41,10 +41,12 @@ namespace MessageProject.Controllers
         {
             return View();
         }
+
         /// <summary>
         /// 更改密碼頁面
         /// </summary>
         /// <returns></returns>
+        [Authorize(policy: "RequireLoggedIn")]
         public IActionResult ChangePassword()
         {
             return View();
@@ -54,6 +56,7 @@ namespace MessageProject.Controllers
         /// 設置管理者頁面
         /// </summary>
         /// <returns></returns>
+        [Authorize(Roles = "Admin")]
         public IActionResult AddAdmin()
         {
             return View();
@@ -66,24 +69,26 @@ namespace MessageProject.Controllers
         /// password 使用者密碼
         /// <returns></returns>
         [HttpPost]
-        public async Task<IActionResult> GetRegisterAccountAsync(IFormCollection form)
+        public async Task<IActionResult> GetRegisterAccountAsync([FromBody] UserAccount userAccount)
         {
-            string userName = form["username"];
-            string password = form["password"];
+            string userName = userAccount.UserName;
+            string password = userAccount.Password;
+            string pwd = MemberModel.EncryptionPassword(password);
             if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password))
             {
                 Models.User user = new()
                 {
                     UserName = userName,
                     Permission = 1,
-
+                    PasswordHash = pwd
                 };
                 //加密密碼
-                string pwd = MemberModel.EncryptionPassword(password);
-                var result = await _userManager.CreateAsync(user, pwd);
+                var result = await _customUserManager.CreateAsync(user);
+
+                //var result = await _userManager.CreateAsync(user);
                 if (result.Succeeded)
                 {
-                    return RedirectToAction(nameof(Login));
+                    return RedirectToAction("Login", "Member");
                 }
                 else
                 {
@@ -117,7 +122,7 @@ namespace MessageProject.Controllers
             string enycrtPassword = MemberModel.EncryptionPassword(password);
             if (!string.IsNullOrEmpty(userName)&& !string.IsNullOrEmpty(password))
             {
-                var result = await _signInManager.PasswordSignInAsync (userName, enycrtPassword, false,lockoutOnFailure: false);
+                var result = await _customSignInManager.PasswordSignInAsync (userName, enycrtPassword, false,lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
                     return RedirectToAction("List", "Message");
@@ -137,7 +142,7 @@ namespace MessageProject.Controllers
         {
             if(!string.IsNullOrEmpty(id))
             {
-                var user = await _userManager.FindByNameAsync(id);
+                var user = await _customUserManager.FindByNameAsync(id);
                 if (user == null)
                 {
                     return Json(false);
@@ -159,7 +164,8 @@ namespace MessageProject.Controllers
         /// <returns></returns>
         public async Task<IActionResult> Logout()
         {
-            await _signInManager.SignOutAsync();
+
+            await _customSignInManager.SignOutAsync();
             return RedirectToAction("Login", "Member"); 
         }
 
@@ -170,26 +176,26 @@ namespace MessageProject.Controllers
         /// currentpassword 舊的使用者密碼
         /// newpassword  新的使用者密碼
         /// <returns></returns>
-        [Authorize(Policy = "RequireLoggedIn")]
-        public async Task<IActionResult> UpdatePasswordAsync(IFormCollection form)
+        public async Task<IActionResult> UpdatePasswordAsync([FromBody]ChangePassword changePassword)
         {
             string userName = User.Identity.Name;
-            string currentPassword = form["currentpassword"];
+            string currentPassword = changePassword.CurrentPassword;
             string enycrtCurrentPassword= MemberModel.EncryptionPassword(currentPassword);
-            string newPassword = form["newpassword"];
+            string newPassword = changePassword.NewPassword;
             string enycrtNewPassword = MemberModel.EncryptionPassword(newPassword);
 
-            User user = await _userManager.FindByNameAsync(userName);
+            var user = await _customUserManager.FindByNameAsync(userName);
+            
             if (user == null)
             {
                 return RedirectToAction("ChangePassword", "Member");
             }
             else
             {
-               var result= await _userManager.ChangePasswordAsync(user, enycrtCurrentPassword, enycrtNewPassword);
+               var result= await _customUserManager.ChangePasswordAsync(user, enycrtCurrentPassword, enycrtNewPassword);
                 if (result.Succeeded)
                 {
-                    return RedirectToAction("Login", "Member");
+                    return RedirectToAction("List", "Message");
                 }
                 else
                 {
@@ -208,21 +214,21 @@ namespace MessageProject.Controllers
         public async Task<IActionResult> AddUserToAdminRole(IFormCollection form)
         {
             string userName = form["username"];
-            var user = await _userManager.FindByNameAsync(userName);
+            var user = await _customUserManager.FindByNameAsync(userName);
 
             if (user != null)
             {
                 // 查找管理員角色
-                var adminRoleExists = await _roleManager.RoleExistsAsync("Admin");
+                var adminRoleExists = await _customRoleManager.RoleExistsAsync("Admin");
                 if (!adminRoleExists)
                 {
-                    await _roleManager.CreateAsync(new IdentityRole("Admin"));
+                    await _customRoleManager.CreateAsync(new IdentityRole("Admin"));
                 }
 
                 // 將使用者加到管理員
-                await _userManager.AddToRoleAsync(user, "Admin");
+                await _customUserManager.AddToRoleAsync(user, "Admin");
 
-                return View("Success");
+                return RedirectToAction("List", "Message");
             }
 
             return View("Error");

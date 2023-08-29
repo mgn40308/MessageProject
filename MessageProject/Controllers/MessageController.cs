@@ -2,7 +2,9 @@
 using MessageProject.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Data;
 
 
@@ -13,13 +15,13 @@ namespace MessageProject.Controllers
     {
         //private readonly AppDbContext _context;
 
-        private readonly ApplicationDbContext _user;
+
 
         private readonly IDbConnection _connection;
-        public MessageController(ApplicationDbContext user, IDbConnection connection)
+        public MessageController(IDbConnection connection)
         {
             //_context = context;
-            _user = user;
+
             _connection = connection;
         }
 
@@ -50,26 +52,16 @@ namespace MessageProject.Controllers
 
         public IActionResult GetDetail(int id)
         {
-            var param = new
-            {
-                Id = id
-            };
+
+            var param = new DynamicParameters();
+            param.Add("@Id", id);
             string query = "SELECT ID , Title , CONTENT,UserName FROM Messages WHERE id=@Id";
             var message = _connection.QueryFirstOrDefault<Message>(query, param, commandType: CommandType.Text);
             
             ICollection<Reply> reply = (ICollection<Reply>)_connection.Query<Reply>("usp_Replys_GetReply", param, commandType: CommandType.StoredProcedure);
             message.Replys = reply;
-            //var message = new 
-            //    var reply = multi.Read<Reply>().ToList(); // 假設 Reply 是您的回覆資料類型
 
-            //    if (message != null)
-            //    {
-            //        message.Replys = reply.ToList();
-
-            //    }
-                return Json(message);
-            
-
+             return Json(message);           
         }
 
         /// <summary>
@@ -103,15 +95,14 @@ namespace MessageProject.Controllers
             string content = form["content"];
             string userName = User.Identity.Name;
             DateTime date = DateTime.Now;
-            var newMessage = new
-            {
-                Title = title,
-                Content = content,
-                UserName = userName,
-                Date = date
-            };
-     
-            int result= _connection.Execute("usp_Messages_Add", newMessage, commandType: CommandType.StoredProcedure);
+            string storedProcedure = "usp_Messages_Add";
+            var param=new DynamicParameters();
+            param.Add("@Title", title);
+            param.Add("@Content", content);
+            param.Add("@UserName", userName);
+            param.Add("@Date", date);
+
+            int result= _connection.Execute(storedProcedure, param, commandType: CommandType.StoredProcedure);
 
             //string query = "INSERT INTO Messages (Title, Content, UserName, Date) VALUES (@Title, @Content, @UserName, @Date);";
             //int result = _connection.Execute(query, newMessage);
@@ -138,13 +129,14 @@ namespace MessageProject.Controllers
             int pageSize = 10; // 每页显示的记录数
             int pageIndex = (id-1) * pageSize;
             //var messages = _context.Messages.OrderByDescending(m=>m.Id).Include(m => m.Replys).Skip(pageIndex * pageSize).Take(pageSize);
-            var pageParam = new
-            {
-               PageIndex= pageIndex,
-               PageSize= pageSize
-            };
+            string storedProcedure = "usp_Messages_GetList";
+            var param = new DynamicParameters();
+            param.Add("@PageIndex", pageIndex);
+            param.Add("@PageSize", pageSize);
 
-             var messages = _connection.Query("usp_Messages_GetList", pageParam, commandType: CommandType.StoredProcedure);
+            var messages = _connection.Query(storedProcedure, param, commandType: CommandType.StoredProcedure);
+           
+
             return Json(messages.ToList());
         }
 
@@ -170,17 +162,15 @@ namespace MessageProject.Controllers
         /// <returns></returns>
         public IActionResult CreateReplyMessage([FromBody]Reply reply)
         {
-                var newReply = new 
-                {
-                    MessageId = reply.MessageId,
-                    UserName = User.Identity.Name,
-                    ReplyContent = reply.ReplyContent,
-                    Date = DateTime.Now
-                };
-
+            string storedProcedure = "usp_Replys_Add";
+            var param= new DynamicParameters();
+            param.Add("@MessageId",reply.MessageId);
+            param.Add("@UserName", User.Identity.Name);
+            param.Add("@ReplyContent", reply.ReplyContent);
+            param.Add("@Date", DateTime.Now);
             //_context.Replys.Add(newReply);
             //int result= _context.SaveChanges();
-            int result =_connection.Execute("usp_Replys_Add", newReply, commandType: CommandType.StoredProcedure);
+            int result =_connection.Execute(storedProcedure, param, commandType: CommandType.StoredProcedure);
             if (result > 0)
             {
                 return Ok();
@@ -217,10 +207,9 @@ namespace MessageProject.Controllers
         [HttpPost]
         public IActionResult DeleteMessage(int id)
         {
-            var param = new
-            {
-                id = id
-            };
+
+            var param = new DynamicParameters();
+            param.Add("@Id", id);
             string query = "SELECT UserName FROM Messages WHERE Id = @id";
             var message= _connection.QueryFirstOrDefault<Message>(query,param,commandType: CommandType.Text);
 
@@ -250,15 +239,14 @@ namespace MessageProject.Controllers
         [HttpPost]
         public IActionResult UpdateReply([FromBody] Reply reply)
         {
-            var queryParam = new
-            {
-                id = reply.Id
-            };
+            var queryParam = new DynamicParameters();
+            queryParam.Add("@id", reply.Id);
+          
             var param = new DynamicParameters();
-            param.Add("@id", reply.Id);
+            param.Add("@Id", reply.Id);
             param.Add("@ReplyContent", reply.ReplyContent);
 
-            string query = "SELECT id,userName FROM Replys WHERE id= @id";
+            string query = "SELECT id,userName FROM Replys WHERE id= @Id";
             var result=_connection.QueryFirstOrDefault<Reply>(query, queryParam, commandType: CommandType.Text);
             
             //var replyToUpdate = _context.Replys.FirstOrDefault(r => r.Id == reply.Id);
@@ -266,6 +254,7 @@ namespace MessageProject.Controllers
             {
                 if (result!= null)
                 {
+                    
                     _connection.Execute("usp_Replys_UpdateReplyContent", param, commandType: CommandType.StoredProcedure);
                     return Ok("Reply content updated successfully.");
                 }
@@ -286,17 +275,18 @@ namespace MessageProject.Controllers
         [HttpPost]
         public IActionResult DeleteReply(int id)
         {
-            var param = new
-            {
-                id = id
-            };
-            string query = "SELECT UserName FROM Replys Where Id=@id ";
+
+            var param =new DynamicParameters();
+            param.Add("@p_Id",id);
+            string query = "SELECT UserName FROM Replys Where Id=@p_Id";
             var reply=  _connection.QueryFirstOrDefault<Reply>(query,param, commandType: CommandType.Text);
             if (CheckPermission(reply.UserName))
             {
                 if (reply != null)
                 {
-                    var count= _connection.Execute("usp_Replys_Delete", param, commandType: CommandType.StoredProcedure);
+                    string storedProcedure = "usp_Replys_Delete";
+                    string deleteQuery = "DELETE FROM Replys Where Id =@p_Id";
+                    var count= _connection.Execute(storedProcedure, param, commandType: CommandType.StoredProcedure);
                     return Ok("Reply content updated successfully.");
                 }
                 else
@@ -319,15 +309,12 @@ namespace MessageProject.Controllers
         {
             
             string query = "SELECT Id,UserName FROM Messages WHERE Id=@Id";
-            var queryParam = new
-            {
-                Id = message.Id
-            };
-            var param = new
-            {
-                Id=message.Id,
-                Content=message.Content,
-            };
+            var queryParam = new DynamicParameters();
+            queryParam.Add("@Id", message.Id);
+            var param = new DynamicParameters();
+            param.Add("@Id", message.Id);
+            param.Add("@Content", message.Content);
+
             var result= _connection.QueryFirstOrDefault<Message>(query, queryParam, commandType: CommandType.Text);           
             if (CheckPermission(result.UserName))
             {

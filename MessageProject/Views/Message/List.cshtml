@@ -29,7 +29,7 @@
                 <td>{{ message.ReplyCount }}</td>
                 <td><a :href="'/Message/Detail/'+message.Id">{{ message.Title }}</a></td>
                 <td>{{ message.UserName }}</td>
-                <td>{{ message.Date }}</td>
+                <td>{{ FromtDate( message.Date )}}</td>
                 <td :name="message.UserName">
                     <button class="d-none" v-on:click="DeleteMessage(message.Id)">X</button>
                 </td>
@@ -64,9 +64,6 @@
             this.GetMessageList();
             this.GetMessagePageCount();
        
-        },
-        mounted() {
-            this.GetUserPerssion();
         },
         methods:{
             GetMessageList(id) {
@@ -146,6 +143,18 @@
                     this.GetMessageList(id);
                 }
             },
+            FromtDate(date){
+                var timestamp = new Date(date);
+
+                var year = timestamp.getFullYear();
+                var month = timestamp.getMonth() + 1; 
+                var day = timestamp.getDate();
+                var hours = timestamp.getHours();
+                var minutes = timestamp.getMinutes();
+
+                var formattedTimestamp = year + '/' + month + '/' + day + ' ' + hours + ':' + minutes;
+                return formattedTimestamp
+            }
 
         },
     });

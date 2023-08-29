@@ -27,7 +27,7 @@ namespace MessageProject.Models
         }
 
         public DbSet<User> Users { get; set; }
-       
+
     }
-   
+
 }

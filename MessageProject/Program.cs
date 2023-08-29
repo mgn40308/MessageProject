@@ -1,5 +1,4 @@
-
-using MessageProject.Hubs;
+﻿using MessageProject.Hubs;
 using MessageProject.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;
@@ -14,9 +13,6 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseMySql(builder.Configuration.GetConnectionString("MySQL"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySQL"))));
-
 
 builder.Services.AddScoped<IDbConnection>(provider =>
 {
@@ -24,15 +20,27 @@ builder.Services.AddScoped<IDbConnection>(provider =>
     return new MySqlConnection(connectionString);
 });
 
+
+
 builder.Services.AddIdentity<User, IdentityRole>(options =>
 {
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequireUppercase = false;
 
 })
-.AddEntityFrameworkStores<ApplicationDbContext>()
-.AddSignInManager<SignInManager<User>>()
+.AddEntityFrameworkStores<CusomIdentityDbContext>()
+.AddUserManager<CustomUserManager>()
+.AddSignInManager<CustomSignInManager>()
+.AddRoleManager<CustomRoleManager>()
 .AddDefaultTokenProviders();
+
+builder.Services.AddDbContext<CusomIdentityDbContext>(options =>
+        options.UseMySql(builder.Configuration.GetConnectionString("MySQL"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySQL"))));
+
+
+builder.Services.AddScoped<CustomUserManager>();
+builder.Services.AddScoped<CustomSignInManager>();
+builder.Services.AddScoped<CustomRoleManager>();
 
 builder.Services.AddAuthorization(options =>
 {
