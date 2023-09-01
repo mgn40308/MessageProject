@@ -20,10 +20,6 @@ namespace MessageProject.Controllers
             _customRoleManager = customRoleManager;
         }
 
-        public IActionResult Index()
-        {
-            return View();
-        }
         /// <summary>
         /// 登入頁面
         /// </summary>
@@ -233,6 +229,17 @@ namespace MessageProject.Controllers
 
             return View("Error");
         }
+
+        public  bool? CheckIsAuthorize()
+        {
+            return User.Identity?.IsAuthenticated;
+        }
+
+        public bool? CheckIsAdmin()
+        {
+            return User.IsInRole("Admin");
+        }
+
 
 
 

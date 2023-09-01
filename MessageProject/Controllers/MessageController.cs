@@ -13,22 +13,13 @@ namespace MessageProject.Controllers
     [Authorize(Policy = "RequireLoggedIn")]
     public class MessageController : Controller
     {
-        //private readonly AppDbContext _context;
-
-
 
         private readonly IDbConnection _connection;
         public MessageController(IDbConnection connection)
         {
-            //_context = context;
-
             _connection = connection;
         }
 
-        public IActionResult Index()
-        {
-            return View();
-        }
 
         /// <summary>
         /// 留言板清單頁面
@@ -52,13 +43,13 @@ namespace MessageProject.Controllers
 
         public IActionResult GetDetail(int id)
         {
-
             var param = new DynamicParameters();
             param.Add("@Id", id);
             string query = "SELECT ID , Title , CONTENT,UserName FROM Messages WHERE id=@Id";
             var message = _connection.QueryFirstOrDefault<Message>(query, param, commandType: CommandType.Text);
-            
+            _connection.Dispose();
             ICollection<Reply> reply = (ICollection<Reply>)_connection.Query<Reply>("usp_Replys_GetReply", param, commandType: CommandType.StoredProcedure);
+            _connection.Dispose();
             message.Replys = reply;
 
              return Json(message);           
@@ -91,9 +82,9 @@ namespace MessageProject.Controllers
         /// <returns></returns>
         public IActionResult CreateMessage(IFormCollection form)
         {
-            string title = form["title"];
-            string content = form["content"];
-            string userName = User.Identity.Name;
+            string? title = form["title"];
+            string? content = form["content"];
+            string? userName = User.Identity?.Name;
             DateTime date = DateTime.Now;
             string storedProcedure = "usp_Messages_Add";
             var param=new DynamicParameters();
@@ -103,12 +94,6 @@ namespace MessageProject.Controllers
             param.Add("@Date", date);
 
             int result= _connection.Execute(storedProcedure, param, commandType: CommandType.StoredProcedure);
-
-            //string query = "INSERT INTO Messages (Title, Content, UserName, Date) VALUES (@Title, @Content, @UserName, @Date);";
-            //int result = _connection.Execute(query, newMessage);
-            //_context.Messages.Add(newMessage);
-            //int result = _context.SaveChanges();
-
             if (result>0)
             {
                 return RedirectToAction("List", "Message");
@@ -126,16 +111,17 @@ namespace MessageProject.Controllers
         /// <returns></returns>
         public IActionResult GetMessageList(int id=1)
         {
-            int pageSize = 10; // 每页显示的记录数
+            int pageSize = 10; 
             int pageIndex = (id-1) * pageSize;
-            //var messages = _context.Messages.OrderByDescending(m=>m.Id).Include(m => m.Replys).Skip(pageIndex * pageSize).Take(pageSize);
+            
             string storedProcedure = "usp_Messages_GetList";
             var param = new DynamicParameters();
             param.Add("@PageIndex", pageIndex);
             param.Add("@PageSize", pageSize);
 
             var messages = _connection.Query(storedProcedure, param, commandType: CommandType.StoredProcedure);
-           
+            _connection.Dispose();
+
 
             return Json(messages.ToList());
         }
@@ -148,8 +134,7 @@ namespace MessageProject.Controllers
         {
             string query = "SELECT COUNT(Id) FROM Messages";
             var count = _connection.QueryFirstOrDefault<int>(query, commandType: CommandType.Text);
-
-            //int messages = _context.Messages.Count();
+            _connection.Dispose();
             int pageCount = (int)Math.Ceiling((double)count / 10);
             return Json(pageCount);
         }
@@ -165,12 +150,11 @@ namespace MessageProject.Controllers
             string storedProcedure = "usp_Replys_Add";
             var param= new DynamicParameters();
             param.Add("@MessageId",reply.MessageId);
-            param.Add("@UserName", User.Identity.Name);
+            param.Add("@UserName", User.Identity?.Name);
             param.Add("@ReplyContent", reply.ReplyContent);
             param.Add("@Date", DateTime.Now);
-            //_context.Replys.Add(newReply);
-            //int result= _context.SaveChanges();
             int result =_connection.Execute(storedProcedure, param, commandType: CommandType.StoredProcedure);
+            _connection.Dispose();
             if (result > 0)
             {
                 return Ok();
@@ -194,7 +178,7 @@ namespace MessageProject.Controllers
             }
             else
             {
-                return Json(User.Identity.Name);
+                return Json(User.Identity?.Name);
             }
           
         }
@@ -212,6 +196,7 @@ namespace MessageProject.Controllers
             param.Add("@Id", id);
             string query = "SELECT UserName FROM Messages WHERE Id = @id";
             var message= _connection.QueryFirstOrDefault<Message>(query,param,commandType: CommandType.Text);
+            _connection.Dispose();
 
             if (CheckPermission(message.UserName))
             {
@@ -219,6 +204,7 @@ namespace MessageProject.Controllers
                 {
                     string deleteQuery = "DELETE  FROM Messages WHERE Id = @id";
                     var count=   _connection.Execute(deleteQuery, param, commandType: CommandType.Text);
+                    _connection.Dispose();
                     return Ok("Message and related replies deleted successfully.");
                 }
                 else
@@ -248,14 +234,14 @@ namespace MessageProject.Controllers
 
             string query = "SELECT id,userName FROM Replys WHERE id= @Id";
             var result=_connection.QueryFirstOrDefault<Reply>(query, queryParam, commandType: CommandType.Text);
-            
-            //var replyToUpdate = _context.Replys.FirstOrDefault(r => r.Id == reply.Id);
-            if(CheckPermission(result.UserName)) 
+            _connection.Dispose();
+            if (CheckPermission(result.UserName)) 
             {
                 if (result!= null)
                 {
                     
                     _connection.Execute("usp_Replys_UpdateReplyContent", param, commandType: CommandType.StoredProcedure);
+                    _connection.Dispose();
                     return Ok("Reply content updated successfully.");
                 }
                 else
@@ -280,6 +266,7 @@ namespace MessageProject.Controllers
             param.Add("@p_Id",id);
             string query = "SELECT UserName FROM Replys Where Id=@p_Id";
             var reply=  _connection.QueryFirstOrDefault<Reply>(query,param, commandType: CommandType.Text);
+            _connection.Dispose();
             if (CheckPermission(reply.UserName))
             {
                 if (reply != null)
@@ -287,6 +274,7 @@ namespace MessageProject.Controllers
                     string storedProcedure = "usp_Replys_Delete";
                     string deleteQuery = "DELETE FROM Replys Where Id =@p_Id";
                     var count= _connection.Execute(storedProcedure, param, commandType: CommandType.StoredProcedure);
+                    _connection.Dispose();
                     return Ok("Reply content updated successfully.");
                 }
                 else
@@ -315,12 +303,14 @@ namespace MessageProject.Controllers
             param.Add("@Id", message.Id);
             param.Add("@Content", message.Content);
 
-            var result= _connection.QueryFirstOrDefault<Message>(query, queryParam, commandType: CommandType.Text);           
+            var result= _connection.QueryFirstOrDefault<Message>(query, queryParam, commandType: CommandType.Text);
+            _connection.Dispose();
             if (CheckPermission(result.UserName))
             {
                 if (result != null)
                 {
                     _connection.Execute("usp_Messages_UpdateContent", param, commandType: CommandType.StoredProcedure);
+                    _connection.Dispose();
                     return Ok("Reply content updated successfully.");
                 }
                 else
@@ -333,7 +323,7 @@ namespace MessageProject.Controllers
 
         public bool CheckPermission(string userName)
         {
-            return (userName == User.Identity.Name || User.IsInRole("Admin"));
+            return (userName == User.Identity?.Name || User.IsInRole("Admin"));
         }
     }
 }

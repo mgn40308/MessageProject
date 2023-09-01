@@ -49,10 +49,9 @@ namespace MessageProject.Models
 
             
         }
-        public override async Task<User> FindByNameAsync(string userName)
+        public override async Task<User?> FindByNameAsync(string userName)
         {
             userName= userName.ToUpper();
-
             var query = "SELECT * FROM AspNetUsers WHERE NormalizedUserName = @UserName";
             var param= new DynamicParameters();
             param.Add("@UserName", userName);
@@ -68,7 +67,7 @@ namespace MessageProject.Models
                 var param = new DynamicParameters();
                 param.Add("@Id", user.Id);
                 param.Add("@passwordHash", newPassword);
-                var result=  _connection.Execute(query, param, commandType: CommandType.Text);
+                var result= await _connection.ExecuteAsync(query, param, commandType: CommandType.Text);
                 if (result > 0)
                 {
                     return IdentityResult.Success;
@@ -79,7 +78,7 @@ namespace MessageProject.Models
 
         }
 
-        public virtual async Task<IdentityResult> AddToRoleAsync(User user, string roleName)
+        public override  async Task<IdentityResult> AddToRoleAsync(User user, string roleName)
         {
             string storedProcedure = "usp_AspNetUserRoles_Add";
 

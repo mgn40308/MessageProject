@@ -5,7 +5,8 @@
      ViewData["Title"] = "Message List Page";
 }
 
-<div id="app">
+
+   
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h1>留言板</h1>
         <div style="display: flex; align-items: center;">
@@ -49,117 +50,8 @@
             </li>
         </ul>
     </div>
-</div>
-<script>
-    const app = Vue.createApp({
-        el: "#app",
-        data() {
-            return {
-                messages: [],
-                pageCount:"",
-                pageNumber:1,
-            }
-        },
-        created() {
-            this.GetMessageList();
-            this.GetMessagePageCount();
-       
-        },
-        methods:{
-            GetMessageList(id) {
-                const self = this;
-                if (id !== self.pageNumber) {
-                    this.LoadPage(id);
-                }
-                
-            },
-            LoadPage(id){
-                const self = this;
-                $.ajax({
-                    url: "/Message/GetMessageList/" + id,
-                    type: "Get",
-                    contentType: "application/json",
-                    success: function (data) {
-                        self.messages = data;
-                        $("td button").addClass("d-none")
-                        self.GetUserPerssion();
-                        if (id) {
-                            self.pageNumber = id;
-                        }
-                    },
-                    error: function (error) {
-                        console.error("Error:", error);
-                    }
-                });
-            },
-            GetUserPerssion() {
-                $.ajax({
-                    url: "/Message/GetUserPerssion",
-                    type: "Get",
-                    contentType: "application/json",
-                    success: function (data) {
-                        if (data == "all") {
-                            $("td").find("button").removeClass("d-none");
-                        } else {
-                            $("[name='" + data + "'").find("button").removeClass("d-none");
-                        }
-                       
-                    },
-                    error: function (error) {
-                        console.error("Error:", error);
-                    }
-                });
-            },
-            DeleteMessage(id) {
-                const self = this;
-                $.ajax({
-                    url: "/Message/DeleteMessage/"+id,
-                    type: "POST",
-                    contentType: "application/json",
-                    success: function (data) {
-                        self.LoadPage(self.pageNumber);
-                    },
-                    error: function (error) {
-                        console.error("Error:", error);
-                    }
-                });                
-            }, 
-            GetMessagePageCount() {
-                const self = this;
-                    $.ajax({
-                    url: "/Message/GetMessagePageCount",
-                    type: "GET",
-                    contentType: "application/json",
-                    success: function (data) {
-                        self.pageCount = data;
-                    },
-                    error: function (error) {
-                        console.error("Error:", error);
-                    }
-                });
-            },
-            GetNextPage(id) {
-                if (id <= this.pageCount && id > 0) {
-                    this.GetMessageList(id);
-                }
-            },
-            FromtDate(date){
-                var timestamp = new Date(date);
 
-                var year = timestamp.getFullYear();
-                var month = timestamp.getMonth() + 1; 
-                var day = timestamp.getDate();
-                var hours = timestamp.getHours();
-                var minutes = timestamp.getMinutes();
-
-                var formattedTimestamp = year + '/' + month + '/' + day + ' ' + hours + ':' + minutes;
-                return formattedTimestamp
-            }
-
-        },
-    });
-    app.mount("#app");
-</script>
+<script  src="~/js/List.js" asp-append-version="true"></script>
 <style>
     .pagination {
         display: inline-block;

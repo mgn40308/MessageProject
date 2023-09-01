@@ -65,4 +65,8 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\src\" />
+  </ItemGroup>
+
 </Project>

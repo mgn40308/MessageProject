@@ -1,11 +1,8 @@
 ﻿using MessageProject.Hubs;
 using MessageProject.Models;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Pomelo.EntityFrameworkCore.MySql;
 using MySql.Data.MySqlClient;
-using System.Configuration;
 using System.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,7 +32,7 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 builder.Services.AddDbContext<CusomIdentityDbContext>(options =>
-        options.UseMySql(builder.Configuration.GetConnectionString("MySQL"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySQL"))));
+       options.UseMySql(builder.Configuration.GetConnectionString("MySQL"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySQL"))));
 
 
 builder.Services.AddScoped<CustomUserManager>();

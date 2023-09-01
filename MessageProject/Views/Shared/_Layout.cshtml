@@ -8,13 +8,14 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/MessageProject.styles.css" asp-append-version="true" />
     <script src="@Url.Content("~/lib/jquery/dist/jquery.min.js")"></script>
-    <script src="@Url.Content("~/lib/vue/vue.global.min.js")"></script>
+    <script src="@Url.Content("https://unpkg.com/vue@3.3.4/dist/vue.global.js")"></script>
     <script src="@Url.Content("~/lib/microsoft/signalr/dist/browser/signalr.js")"></script>
 </head>
 <body>
-    <header>
+
+    <header>        
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
+                <div id="navbarContent" class="container-fluid">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">MessageProject</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
@@ -32,27 +33,19 @@
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 Member
                             </a>
-                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                @if (User.Identity.IsAuthenticated)
-                                {
-                                    <li>
+                            <ul id="dropMenu" class="dropdown-menu" aria-labelledby="navbarDropdown">                           
+                                    <li v-if="isAuthorize">
                                         <a class="nav-link text-dark" asp-area="" asp-controller="Member" asp-action="ChangePassword">ChangePassword</a>
                                     </li>
-                                    <li>
+                                    <li v-if="isAuthorize">
                                         <a class="nav-link text-dark" asp-area="" asp-controller="Member" asp-action="Logout">Logout</a>
                                     </li>
-                                }
-                                else{
-                                    <li>
+                                    <li v-else>
                                         <a class="nav-link text-dark" asp-area="" asp-controller="Member" asp-action="Login">Login</a>
-                                    </li>
-                                } 
-                                @if (User.IsInRole("Admin"))
-                                {
-                                    <li>
+                                    </li>                              
+                                    <li v-if="isAdmin">
                                         <a class="nav-link text-dark" asp-area="" asp-controller="Member" asp-action="AddAdmin">AddAdmin</a>
                                     </li>
-                                }
                             </ul>
                         </li>
                     </ul>
@@ -60,7 +53,7 @@
             </div>
         </nav>
     </header>
-    <div class="container">
+        <div id="app" class="container">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
@@ -74,6 +67,8 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script src="~/js/Layout.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

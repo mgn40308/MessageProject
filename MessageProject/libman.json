@@ -3,14 +3,6 @@
   "defaultProvider": "cdnjs",
   "libraries": [
     {
-      "library": "vue@3.3.4",
-      "destination": "wwwroot/lib/vue/",
-      "files": [
-        "vue.cjs.js",
-        "vue.global.min.js"
-      ]
-    },
-    {
       "provider": "unpkg",
       "library": "@microsoft/signalr@7.0.10",
       "destination": "wwwroot/lib/microsoft/signalr/",
@@ -18,6 +10,23 @@
         "dist/browser/signalr.min.js",
         "dist/browser/signalr.js"
       ]
+    },
+    {
+      "provider": "unpkg",
+      "library": "vuex@4.1.0",
+      "destination": "wwwroot/lib/vuex/"
+    },
+    {
+      "provider": "unpkg",
+      "library": "vue-router@4.2.4",
+      "destination": "wwwroot/lib/vue-router/"
+    },
+    {
+      "provider": "unpkg",
+      "library": "vue@3.3.4",
+      "destination": "wwwroot/lib/vue/"
     }
   ]
+
+    
 }
